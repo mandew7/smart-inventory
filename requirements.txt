@@ -1,0 +1,6 @@
+fastapi[all]
+sqlalchemy[asyncio]
+asyncpg  # драйвер для асинхронного Postgres
+alembic  # для миграций (обязательно для Middle)
+pydantic-settings  # для управления конфигами
+psycopg2-binary

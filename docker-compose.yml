@@ -1,24 +1,33 @@
+version: '3.8'
+
 services:
+  # Наша база данных
   db:
-    image: postgres:16-alpine
+    image: postgres:15-alpine
     container_name: inventory_db
+    restart: always
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: inventory_management
+      POSTGRES_DB: inventory_db
     ports:
-      - "5432:5432"
+      - "5435:5432" # Прокидываем порт, чтобы ты мог зайти в базу через DBeaver/PGAdmin
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: inventory_pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+  # Наше FastAPI приложение
+  backend:
+    build: .
+    container_name: inventory_backend
+    restart: always
     ports:
-      - "5050:80"
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - db
+    volumes:
+      - .:/app # Монтируем папку с кодом, чтобы работал --reload
 
 volumes:
   postgres_data:
