@@ -26,3 +26,25 @@ async def get_categories(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Category))
     categories = result.scalars().all()
     return categories
+
+@router.delete("/{category_id}")
+async def delete_category(category_id: int, db: AsyncSession = Depends(get_db)):
+    # 1. Ищем категорию
+    result = await db.execute(select(Category).where(Category.id == category_id))
+    category = result.scalar_one_or_none()
+    
+    if not category:
+        raise HTTPException(status_code=404, detail="Категория не найдена")
+
+    # 2. Проверяем, есть ли в ней товары (опционально, если хочешь выдать красивую ошибку)
+    product_check = await db.execute(select(Product).where(Product.category_id == category_id))
+    if product_check.scalars().first():
+        raise HTTPException(
+            status_code=400, 
+            detail="Нельзя удалить категорию, в которой есть товары. Сначала удалите или переместите товары."
+        )
+
+    # 3. Удаляем
+    await db.delete(category)
+    await db.commit()
+    return {"message": f"Категория '{category.name}' успешно удалена"}

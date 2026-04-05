@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, ForeignKey # Проверь этот импорт!
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -7,11 +7,13 @@ class Product(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
-    description = Column(String)
     price = Column(Float)
     stock = Column(Integer, default=0)
+    description = Column(String, nullable=True)
     
-    category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
+    # ВОТ ЗДЕСЬ БЫЛА ОШИБКА. Проверь, чтобы было именно так:
+    category_id = Column(Integer, ForeignKey("categories.id")) 
     
-    # Добавляем lazy="selectin" — это важно для асинхронной работы!
-    category = relationship("Category", back_populates="products", lazy="selectin")
+    # Отношения (relationship)
+    category = relationship("Category", back_populates="products")
+    stock_logs = relationship("StockLog", back_populates="product", cascade="all, delete-orphan")

@@ -1,31 +1,38 @@
+import uvicorn
 from fastapi import FastAPI
-# Импортируем роутеры напрямую из файлов
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.core.database import engine, Base
+from app.models.product import Product
+from app.models.category import Category
+from app.models.stock_log import StockLog
+
 from app.api.products import router as products_router
 from app.api.categories import router as categories_router
 
-# Создаем экземпляр приложения
-app = FastAPI(
-    title="Smart Inventory System",
-    description="Система управления складом с асинхронной базой данных",
-    version="0.2.0"
+app = FastAPI(title="Smart Inventory")
+
+origins = [
+    "http://127.0.0.1:5500",  # Ваш Live Server
+    "http://localhost:5500",   # На случай, если обращаетесь через localhost
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,           # Разрешить запросы с этих адресов
+    allow_credentials=True,
+    allow_methods=["*"],             # Разрешить все методы (GET, POST, PUT, DELETE и т.д.)
+    allow_headers=["*"],             # Разрешить все заголовки
 )
 
-# Подключаем роутер товаров
-# Мы убираем prefix="/products" здесь, так как он уже прописан внутри самих файлов роутеров
-app.include_router(products_router)
-app.include_router(categories_router)
+@app.on_event("startup")
+async def startup():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+app.include_router(products_router, prefix="/products", tags=["products"])
+app.include_router(categories_router, prefix="/categories", tags=["categories"])
 
 @app.get("/")
 async def root():
-    """
-    Корневой эндпоинт для проверки работоспособности API.
-    """
-    return {
-        "status": "online",
-        "message": "Welcome to Smart Inventory API",
-        "docs": "/docs"
-    }
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)
+    return {"status": "ok"}
